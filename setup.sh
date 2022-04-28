@@ -242,22 +242,22 @@ do_install() {
 		$sh_c_local "mkdir -p ${HOME}/.config/git/"
 		$sh_c_local "touch ${HOME}/.config/git/config"
 	fi
-	if ! grep -qxF "    pager = delta" "${HOME}/.config/git/config" >/dev/null; then
+	if ! grep -qxF "        pager = delta" "${HOME}/.config/git/config" >/dev/null; then
 		$sh_c_local "{
 			echo \"[core]\"
-			echo \"    pager = delta\"
+			echo \"        pager = delta\"
 			echo \"\"
 			echo \"[interactive]\"
-			echo \"    diffFilter = delta --color-only\"
+			echo \"        diffFilter = delta --color-only\"
 			echo \"\"
 			echo \"[delta]\"
-			echo \"    navigate = true  # use n and N to move between diff sections\"
+			echo \"        navigate = true  # use n and N to move between diff sections\"
 			echo \"\"
 			echo \"[merge]\"
-			echo \"    conflictstyle = diff3\"
+			echo \"        conflictstyle = diff3\"
 			echo \"\"
 			echo \"[diff]\"
-			echo \"    colorMoved = default\"
+			echo \"        colorMoved = default\"
 		} | sudo tee -a \"${HOME}/.config/git/config\" > /dev/null"
 	fi
 
