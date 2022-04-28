@@ -131,6 +131,7 @@ do_install() {
 
 		case "$dist_version" in
 		bionic)
+			$sh_c "add-apt-repository ppa:git-core/ppa"
 			;;
 		jammy)
 			pre_reqs+=(
