@@ -490,6 +490,20 @@ do_install() {
 		esac
 	fi
 
+	# doom emacs
+	if [ ! -f "${HOME}/.config/emacs/bin/doom" ]; then
+		if [ -d "${HOME}/.emacs.d" ]; then
+			$sh_c_local "rm -rf ${HOME}/.emacs.d"
+		fi
+		if [ -d "${HOME}/.config/emacs" ]; then
+			$sh_c_local "rm -rf ${HOME}/.config/emacs"
+		fi
+		$sh_c_local "git clone https://github.com/hlissner/doom-emacs ${HOME}/.config/emacs"
+		$sh_c_local "${HOME}/.config/emacs/bin/doom -y sync"
+		$sh_c_local "${HOME}/.config/emacs/bin/doom env"
+		$sh_c_local "emacs --batch -f all-the-icons-install-fonts"
+	fi
+
 	exit 0
 }
 
