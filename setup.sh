@@ -285,7 +285,7 @@ do_install() {
     $sh_c_local "{
       echo \"\"
       echo \"# gnupg\"
-      echo \"export GNUPGHOME=~/.share/gnupg\"
+      echo \"export GNUPGHOME=~/.local/share/gnupg\"
     } | sudo tee -a \"${ZSHENV}\" > /dev/null"
   fi
 
@@ -296,7 +296,7 @@ do_install() {
   fi
 
   # dotfiles
-  DOTFILES_PATH="${HOME}/.share/git-dotfiles"
+  DOTFILES_PATH="${HOME}/.local/share/git-dotfiles"
   config="/usr/bin/git --git-dir=${DOTFILES_PATH} --work-tree=${HOME}"
   if [ ! -d "${DOTFILES_PATH}" ]; then
     $sh_c_local "git clone --bare ${GIT_URL} ${DOTFILES_PATH}"
@@ -338,7 +338,7 @@ do_install() {
   fi
 
   # mambaforge
-  mambaforge_home="${HOME}/.share/mambaforge"
+  mambaforge_home="${HOME}/.local/share/mambaforge"
   if [ ! -d "${mambaforge_home}" ]; then
     $sh_c_local "wget -N -P /tmp/ https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
     $sh_c_local "bash /tmp/Mambaforge-$(uname)-$(uname -m).sh -bfs -p ${mambaforge_home}"
