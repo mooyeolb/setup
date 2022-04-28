@@ -122,18 +122,30 @@ do_install() {
       ca-certificates
       curl
       git
-      ripgrep
       cmake
-      glslang-tools
+      unzip
       libtool
       golang
-      git-delta
       ffmpeg
-      fzf
-      bat
-      exa
     )
-    if ! command -v gpg >/dev/null; then
+
+    case "$dist_version" in
+    bionic)
+      ;;
+    jammy)
+      pre_reqs+=(
+        ripgrep
+        glslang-tools
+        fzf
+        bat
+        exa
+      )
+      ;;
+    *)
+      ;;
+    esac
+
+    if ! command_exists gpg; then
       pre_reqs+=(gnupg)
     fi
     (
@@ -157,6 +169,7 @@ do_install() {
       git
       ripgrep
       cmake
+      unzip
       glslang
       libtool
       python-devel
@@ -184,40 +197,147 @@ do_install() {
     ;;
   esac
 
+  # ripgrep
+  if ! command_exists rg; then
+    $sh_c_local "curl -LO https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep-13.0.0-x86_64-unknown-linux-musl.tar.gz"
+    $sh_c_local "tar xf ripgrep-13.0.0-*.tar.gz"
+    $sh_c_local "cp ripgrep-13.0.0-*/rg ${HOME}/.local/bin/rg"
+    # TODO: ripgrep completion, man
+  fi
+
+  # glslang-tools
+
+  # fzf
+  if ! command_exists fzf; then
+    $sh_c_local "git clone --depth 1 https://github.com/junegunn/fzf.git ${HOME}/.config/fzf"
+    $sh_c_local "${HOME}/.config/fzf/install"
+  fi
+
+  # bat
+  if command_exists batcat && ! command_exists bat; then
+    $sh_c_local "ln -s /usr/bin/batcat ${HOME}/.local/bin/bat"
+  fi
+  if ! command_exists bat; then
+    $sh_c_local "curl -LO https://github.com/sharkdp/bat/releases/download/v0.20.0/bat-v0.20.0-x86_64-unknown-linux-musl.tar.gz"
+    $sh_c_local "tar xf bat-v0.20.0-*.tar.gz"
+    $sh_c_local "cp bat-v0.20.0-*/bat ${HOME}/.local/bin/bat"
+    # TODO: bat completion, man
+  fi
+
+  # exa
+  if ! command_exists exa; then
+    $sh_c_local "curl -LO https://github.com/ogham/exa/releases/download/v0.10.0/exa-linux-x86_64-v0.10.0.zip"
+    $sh_c_local "unzip -a exa-linux-x86_64-v0.10.0.zip -d exa-linux-x86_64-v0.10.0"
+    $sh_c_local "cp exa-linux-x86_64-v0.10.0/bin/exa ${HOME}/.local/bin/exa"
+    # TODO: exa completion, man
+  fi
+
+  # git-delta
+  if ! command_exists delta; then
+    $sh_c_local "curl -LO https://github.com/dandavison/delta/releases/download/0.12.1/delta-0.12.1-x86_64-unknown-linux-musl.tar.gz"
+    $sh_c_local "tar xf delta-0.12.1-*.tar.gz"
+    $sh_c_local "cp delta-0.12.1-*/delta ${HOME}/.local/bin/delta"
+  fi
+  if [ ! -f "${HOME}/.config/git/config" ]; then
+    $sh_c_local "mkdir -p ${HOME}/.config/git/"
+    $sh_c_local "touch ${HOME}/.config/git/config"
+  fi
+  if ! grep -qxF "    pager = delta" "${HOME}/.config/git/config" >/dev/null; then
+    $sh_c_local "{
+      echo \"[core]\"
+      echo \"    pager = delta\"
+      echo \"\"
+      echo \"[interactive]\"
+      echo \"    diffFilter = delta --color-only\"
+      echo \"\"
+      echo \"[delta]\"
+      echo \"    navigate = true  # use n and N to move between diff sections\"
+      echo \"\"
+      echo \"[merge]\"
+      echo \"    conflictstyle = diff3\"
+      echo \"\"
+      echo \"[diff]\"
+      echo \"    colorMoved = default\"
+    } | sudo tee -a \"${HOME}/.config/git/config\" > /dev/null"
+  fi
+
   # zsh
-  $sh_c "chsh -s $(which zsh) ${user}"
-  $sh_c_local "mkdir -p ${HOME}/.cache/zsh"
-  $sh_c_local "grep -qxF \"# zsh data directory\" \"${ZSHENV}\" || \
-    {
+  if ! echo "${SHELL}" | grep -Eq "*/zsh"; then
+    $sh_c "chsh -s $(which zsh) ${user}"
+  fi
+  if [ ! -d "${HOME}/.cache/zsh" ]; then
+    $sh_c_local "mkdir -p ${HOME}/.cache/zsh"
+  fi
+  if ! grep -qxF "# zsh data directory" "${ZSHENV}" >/dev/null; then
+    $sh_c_local "{
       echo \"\"
       echo \"# zsh data directory\"
       echo \"export ZDOTDIR=~/.config/zsh\"
     } | sudo tee -a \"${ZSHENV}\" > /dev/null"
+  fi
 
   # gnupg
-  $sh_c_local "grep -qxF \"# gnupg\" \"${ZSHENV}\" || \
-    {
+  if ! grep -qxF "# gnupg" "${ZSHENV}" >/dev/null; then
+    $sh_c_local "{
       echo \"\"
       echo \"# gnupg\"
       echo \"export GNUPGHOME=~/.share/gnupg\"
     } | sudo tee -a \"${ZSHENV}\" > /dev/null"
+  fi
+
+  # sheldon
+  if ! command_exists sheldon; then
+    $sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
+      | bash -s -- --repo rossmacarthur/sheldon --to ~/.local/bin"
+  fi
+
+  # dotfiles
+  DOTFILES_PATH="${HOME}/.share/git-dotfiles"
+  config="/usr/bin/git --git-dir=${DOTFILES_PATH} --work-tree=${HOME}"
+  if [ ! -d "${DOTFILES_PATH}" ]; then
+    $sh_c_local "git clone --bare ${GIT_URL} ${DOTFILES_PATH}"
+    $sh_c_local "grep -qxF ${DOTFILES_PATH} ${ZSHENV} || echo ${DOTFILES_PATH} >> ${DOTFILES_PATH}/info/exclude"
+    if ${config} checkout >/dev/null 2>/dev/null; then
+      echo '# Checked out config.';
+    else
+      echo '# Backing up pre-existing dot files.';
+      $sh_c_local "mkdir -p $HOME/.config-backup"
+      $sh_c_local "${config} checkout 2>&1 | egrep '\s+\.' | awk {'print \$1'} | xargs -I{} dirname ${HOME}/.config-backup/{} | xargs -I{} mkdir -p {}"
+      $sh_c_local "${config} checkout 2>&1 | egrep '\s+\.' | awk {'print \$1'} | xargs -I{} mv ${HOME}/{} ${HOME}/.config-backup/{}"
+    fi
+    $sh_c_local "${config} checkout"
+    $sh_c_local "${config} submodule update --init"
+    $sh_c_local "${config} config status.showUntrackedFiles no"
+  fi
+  if [ -f "${HOME}/.ssh/config" ]; then
+    $sh_c_local "chmod 600 ${HOME}/.ssh/config"
+  fi
 
   # docker
-  if ! command -v docker &>/dev/null; then
+  if ! command_exists docker; then
     $sh_c "wget -qO- https://get.docker.com | /bin/bash"
   fi
 
+  # kubectl
+  if ! command_exists kubectl; then
+    $sh_c_local "curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\""
+    $sh_c_local "chmod +x kubectl"
+    $sh_c_local "mkdir -p ${HOME}/.local/bin"
+    $sh_c_local "mv ./kubectl ${HOME}/.local/bin/kubectl"
+  fi
+
   # nvm
-  nvm_home="${HOME}/.share/nvm"
-  if [ ! -d "$nvm_home" ]; then
-    $sh_c_local "wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | /bin/bash"
+  nvm_home="${HOME}/.config/nvm"
+  if [ ! -d "${nvm_home}" ]; then
+    $sh_c_local "mkdir ${nvm_home}"
+    $sh_c_local "wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | NVM_DIR=${nvm_home} PROFILE=${HOME}/.config/zsh/.zshrc /bin/bash"
   fi
 
   # mambaforge
   mambaforge_home="${HOME}/.share/mambaforge"
-  if [ ! -d "$mambaforge_home" ]; then
+  if [ ! -d "${mambaforge_home}" ]; then
     $sh_c_local "wget -N -P /tmp/ https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
-    $sh_c_local "bash /tmp/Mambaforge-$(uname)-$(uname -m).sh -bfs -p $mambaforge_home"
+    $sh_c_local "bash /tmp/Mambaforge-$(uname)-$(uname -m).sh -bfs -p ${mambaforge_home}"
     $sh_c_local "rm /tmp/Mambaforge-$(uname)-$(uname -m).sh"
   fi
 
