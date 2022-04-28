@@ -143,6 +143,7 @@ do_install() {
       $sh_c "apt-get update -qq >/dev/null"
       $sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${pre_reqs[@]}" ">/dev/null"
     )
+    ZSHENV="/etc/zsh/zshenv"
     ;;
   fedora)
     pkg_manager="dnf"
@@ -173,6 +174,7 @@ do_install() {
       $sh_c "$pkg_manager groupinstall -y -q" "${pre_reqs_group[@]}"
       $sh_c "$pkg_manager install -y -q" "${pre_reqs[@]}"
     )
+    ZSHENV="/etc/zshenv"
     ;;
   *)
     echo
@@ -182,19 +184,37 @@ do_install() {
     ;;
   esac
 
+  # zsh
+  $sh_c "chsh -s $(which zsh) ${user}"
+  $sh_c_local "mkdir -p ${HOME}/.cache/zsh"
+  $sh_c_local "grep -qxF \"# zsh data directory\" \"${ZSHENV}\" || \
+    {
+      echo \"\"
+      echo \"# zsh data directory\"
+      echo \"export ZDOTDIR=~/.config/zsh\"
+    } | sudo tee -a \"${ZSHENV}\" > /dev/null"
+
+  # gnupg
+  $sh_c_local "grep -qxF \"# gnupg\" \"${ZSHENV}\" || \
+    {
+      echo \"\"
+      echo \"# gnupg\"
+      echo \"export GNUPGHOME=~/.share/gnupg\"
+    } | sudo tee -a \"${ZSHENV}\" > /dev/null"
+
   # docker
   if ! command -v docker &>/dev/null; then
     $sh_c "wget -qO- https://get.docker.com | /bin/bash"
   fi
 
   # nvm
-  nvm_home="/home/${user}/.share/nvm"
+  nvm_home="${HOME}/.share/nvm"
   if [ ! -d "$nvm_home" ]; then
     $sh_c_local "wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | /bin/bash"
   fi
 
   # mambaforge
-  mambaforge_home="/home/${user}/.share/mambaforge"
+  mambaforge_home="${HOME}/.share/mambaforge"
   if [ ! -d "$mambaforge_home" ]; then
     $sh_c_local "wget -N -P /tmp/ https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
     $sh_c_local "bash /tmp/Mambaforge-$(uname)-$(uname -m).sh -bfs -p $mambaforge_home"
