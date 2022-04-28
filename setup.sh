@@ -210,7 +210,7 @@ do_install() {
   # fzf
   if ! command_exists fzf; then
     $sh_c_local "git clone --depth 1 https://github.com/junegunn/fzf.git ${HOME}/.config/fzf"
-    $sh_c_local "${HOME}/.config/fzf/install"
+    $sh_c_local "${HOME}/.config/fzf/install --xdg --key-bindings --completion --update-rc --no-bash --no-fish"
   fi
 
   # bat
@@ -263,7 +263,11 @@ do_install() {
 
   # zsh
   if ! echo "${SHELL}" | grep -Eq ".*/zsh"; then
-    $sh_c "chsh -s $(which zsh) ${user}"
+    if [ "${lsb_dist}" == "ubuntu" ] && [ "${dist_version}" == "bionic" ]; then
+      $sh_c_local "chsh -s $(which zsh) ${user}"
+    else
+      $sh_c "chsh -s $(which zsh) ${user}"
+    fi
   fi
   if [ ! -d "${HOME}/.cache/zsh" ]; then
     $sh_c_local "mkdir -p ${HOME}/.cache/zsh"
