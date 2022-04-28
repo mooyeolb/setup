@@ -139,6 +139,7 @@ do_install() {
 				fzf
 				bat
 				exa
+				fd-find
 			)
 			;;
 		*)
@@ -179,6 +180,7 @@ do_install() {
 			fzf
 			bat
 			exa
+			fd-find
 		)
 		(
 			if ! is_dry_run; then
@@ -286,6 +288,17 @@ do_install() {
 		$sh_c_local "unzip -a exa-linux-x86_64-v0.10.0.zip -d exa-linux-x86_64-v0.10.0"
 		$sh_c_local "cp exa-linux-x86_64-v0.10.0/bin/exa ${HOME}/.local/bin/exa"
 		# TODO: exa completion, man
+	fi
+
+	# fd
+	if command_exists fdfind && ! command_exists fd; then
+		$sh_c_local "ln -s /usr/bin/fdfind ${HOME}/.local/bin/fd"
+	fi
+	if ! command_exists fd; then
+		$sh_c_local "curl -LO https://github.com/sharkdp/fd/releases/download/v8.3.2/fd-v8.3.2-x86_64-unknown-linux-musl.tar.gz"
+		$sh_c_local "tar xf fd-v8.3.2-*.tar.gz"
+		$sh_c_local "cp fd-v8.3.2-*/fd ${HOME}/.local/bin/fd"
+		# TODO: fd completion, man
 	fi
 
 	# git-delta
