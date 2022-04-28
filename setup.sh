@@ -262,7 +262,7 @@ do_install() {
   fi
 
   # zsh
-  if ! echo "${SHELL}" | grep -Eq "*/zsh"; then
+  if ! echo "${SHELL}" | grep -Eq ".*/zsh"; then
     $sh_c "chsh -s $(which zsh) ${user}"
   fi
   if [ ! -d "${HOME}/.cache/zsh" ]; then
