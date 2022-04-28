@@ -292,7 +292,7 @@ do_install() {
   # sheldon
   if ! command_exists sheldon; then
     $sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
-      | bash -s -- --repo rossmacarthur/sheldon --to ~/.local/bin"
+      | bash -s -- --repo rossmacarthur/sheldon --to ${HOME}/.local/bin"
   fi
 
   # dotfiles
