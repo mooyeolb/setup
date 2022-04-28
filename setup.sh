@@ -197,6 +197,62 @@ do_install() {
 		;;
 	esac
 
+	# zsh
+	if ! echo "${SHELL}" | grep -Eq ".*/zsh"; then
+		if [ "${lsb_dist}" == "ubuntu" ] && [ "${dist_version}" == "bionic" ]; then
+			$sh_c_local "chsh -s $(which zsh) ${user}"
+		else
+			$sh_c "chsh -s $(which zsh) ${user}"
+		fi
+	fi
+	if [ ! -d "${HOME}/.cache/zsh" ]; then
+		$sh_c_local "mkdir -p ${HOME}/.cache/zsh"
+	fi
+	if ! grep -qxF "# zsh data directory" "${ZSHENV}" >/dev/null; then
+		$sh_c_local "{
+			echo \"\"
+			echo \"# zsh data directory\"
+			echo \"export ZDOTDIR=\\\"\${HOME}/.config/zsh\\\"\"
+		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
+	fi
+
+	# gnupg
+	if ! grep -qxF "# gnupg" "${ZSHENV}" >/dev/null; then
+		$sh_c_local "{
+			echo \"\"
+			echo \"# gnupg\"
+			echo \"export GNUPGHOME=\\\"\${HOME}/.local/share/gnupg\\\"\"
+		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
+	fi
+
+	# sheldon
+	if ! command_exists sheldon; then
+		$sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
+			| bash -s -- --repo rossmacarthur/sheldon --to ${HOME}/.local/bin"
+	fi
+
+	# dotfiles
+	DOTFILES_PATH="${HOME}/.local/share/git-dotfiles"
+	config="/usr/bin/git --git-dir=${DOTFILES_PATH} --work-tree=${HOME}"
+	if [ ! -d "${DOTFILES_PATH}" ]; then
+		$sh_c_local "git clone --bare ${GIT_URL} ${DOTFILES_PATH}"
+		$sh_c_local "grep -qxF ${DOTFILES_PATH} ${ZSHENV} || echo ${DOTFILES_PATH} >> ${DOTFILES_PATH}/info/exclude"
+		if ${config} checkout >/dev/null 2>/dev/null; then
+			echo '# Checked out config.';
+		else
+			echo '# Backing up pre-existing dot files.';
+			$sh_c_local "mkdir -p $HOME/.config-backup"
+			$sh_c_local "${config} checkout 2>&1 | egrep '\s+\.' | awk {'print \$1'} | xargs -I{} dirname ${HOME}/.config-backup/{} | xargs -I{} mkdir -p {}"
+			$sh_c_local "${config} checkout 2>&1 | egrep '\s+\.' | awk {'print \$1'} | xargs -I{} mv ${HOME}/{} ${HOME}/.config-backup/{}"
+		fi
+		$sh_c_local "${config} checkout"
+		$sh_c_local "${config} submodule update --init"
+		$sh_c_local "${config} config status.showUntrackedFiles no"
+	fi
+	if [ -f "${HOME}/.ssh/config" ]; then
+		$sh_c_local "chmod 600 ${HOME}/.ssh/config"
+	fi
+
 	# ripgrep
 	if ! command_exists rg; then
 		$sh_c_local "curl -LO https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep-13.0.0-x86_64-unknown-linux-musl.tar.gz"
@@ -261,62 +317,6 @@ do_install() {
 		} | sudo tee -a \"${HOME}/.config/git/config\" > /dev/null"
 	fi
 
-	# zsh
-	if ! echo "${SHELL}" | grep -Eq ".*/zsh"; then
-		if [ "${lsb_dist}" == "ubuntu" ] && [ "${dist_version}" == "bionic" ]; then
-			$sh_c_local "chsh -s $(which zsh) ${user}"
-		else
-			$sh_c "chsh -s $(which zsh) ${user}"
-		fi
-	fi
-	if [ ! -d "${HOME}/.cache/zsh" ]; then
-		$sh_c_local "mkdir -p ${HOME}/.cache/zsh"
-	fi
-	if ! grep -qxF "# zsh data directory" "${ZSHENV}" >/dev/null; then
-		$sh_c_local "{
-			echo \"\"
-			echo \"# zsh data directory\"
-			echo \"export ZDOTDIR=\\\"\${HOME}/.config/zsh\\\"\"
-		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
-	fi
-
-	# gnupg
-	if ! grep -qxF "# gnupg" "${ZSHENV}" >/dev/null; then
-		$sh_c_local "{
-			echo \"\"
-			echo \"# gnupg\"
-			echo \"export GNUPGHOME=\\\"\${HOME}/.local/share/gnupg\\\"\"
-		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
-	fi
-
-	# sheldon
-	if ! command_exists sheldon; then
-		$sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
-			| bash -s -- --repo rossmacarthur/sheldon --to ${HOME}/.local/bin"
-	fi
-
-	# dotfiles
-	DOTFILES_PATH="${HOME}/.local/share/git-dotfiles"
-	config="/usr/bin/git --git-dir=${DOTFILES_PATH} --work-tree=${HOME}"
-	if [ ! -d "${DOTFILES_PATH}" ]; then
-		$sh_c_local "git clone --bare ${GIT_URL} ${DOTFILES_PATH}"
-		$sh_c_local "grep -qxF ${DOTFILES_PATH} ${ZSHENV} || echo ${DOTFILES_PATH} >> ${DOTFILES_PATH}/info/exclude"
-		if ${config} checkout >/dev/null 2>/dev/null; then
-			echo '# Checked out config.';
-		else
-			echo '# Backing up pre-existing dot files.';
-			$sh_c_local "mkdir -p $HOME/.config-backup"
-			$sh_c_local "${config} checkout 2>&1 | egrep '\s+\.' | awk {'print \$1'} | xargs -I{} dirname ${HOME}/.config-backup/{} | xargs -I{} mkdir -p {}"
-			$sh_c_local "${config} checkout 2>&1 | egrep '\s+\.' | awk {'print \$1'} | xargs -I{} mv ${HOME}/{} ${HOME}/.config-backup/{}"
-		fi
-		$sh_c_local "${config} checkout"
-		$sh_c_local "${config} submodule update --init"
-		$sh_c_local "${config} config status.showUntrackedFiles no"
-	fi
-	if [ -f "${HOME}/.ssh/config" ]; then
-		$sh_c_local "chmod 600 ${HOME}/.ssh/config"
-	fi
-
 	# docker
 	if ! command_exists docker; then
 		$sh_c "wget -qO- https://get.docker.com | /bin/bash"
@@ -343,6 +343,137 @@ do_install() {
 		$sh_c_local "wget -N -P /tmp/ https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
 		$sh_c_local "bash /tmp/Mambaforge-$(uname)-$(uname -m).sh -bfs -p ${mambaforge_home}"
 		$sh_c_local "rm /tmp/Mambaforge-$(uname)-$(uname -m).sh"
+	fi
+
+	# emacs
+	if ! command_exists emacs; then
+		# Run setup for each distro accordingly
+		case "$lsb_dist" in
+		ubuntu)
+			case "$dist_version" in
+			bionic)
+				$sh_c "add-apt-repository ppa:ubuntu-toolchain-r/test"
+				;;
+			jammy)
+				;;
+			*)
+				;;
+			esac
+
+			## https://gist.github.com/abidanBrito/2b5e447f191bb6bb70c9b6fe6f9e7956
+			## Author: Abidán Brito
+			## This script builds GNU Emacs 28 with support for native elisp compilation,
+			## libjansson (C JSON library) and mailutils.
+
+			# Let's set the number of jobs to something reasonable; keep 2 cores
+			# free to avoid choking the computer during compilation.
+			$sh_c_local "JOBS=$(nproc --ignore=2)"
+
+			# Clone repo locally and get into it.
+			$sh_c_local "git clone --branch emacs-28 git://git.savannah.gnu.org/emacs.git"
+
+			# Get essential dependencies.
+			emacs_pre_reqs=(
+				build-essential
+				texinfo
+				libgnutls28-dev
+				libjpeg-dev
+				libpng-dev
+				libtiff5-dev
+				libgif-dev
+				libxpm-dev
+				libncurses-dev
+				libgtk-3-dev
+				# libwebkit2gtk-4.0-dev
+				# libmagick++-dev
+			)
+
+			# Get dependencies for gcc-10 and the build process.
+			emacs_pre_reqs+=(
+				gcc-10
+				g++-10
+				libgccjit0
+				libgccjit-10-dev
+			)
+
+			# Get dependencies for fast JSON.
+			emacs_pre_reqs+=(
+				libjansson4
+				libjansson-dev
+			)
+
+			# Get GNU Mailutils (protocol-independent mail framework).
+			emacs_pre_reqs+=(
+				mailutils
+			)
+
+			# # Stop debconf from complaining about postfix nonsense.
+			# DEBIAN_FRONTEND=noninteractive
+			(
+				$sh_c "apt-get update -qq >/dev/null"
+				$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${emacs_pre_reqs[@]}" ">/dev/null"
+			)
+
+			# Needed for compiling libgccjit or we'll get cryptic error messages.
+			$sh_c_local "export CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10"
+
+			# Configure and run.
+			#
+			# Compiler flags:
+			# -O2 -> Turn on a bunch of optimization flags. There's also -O3, but it increases
+			#        the instruction cache footprint, which may end up reducing performance.
+			# -pipe -> Reduce temporary files to the minimum.
+			# -mtune=native -> Optimize code for the local machine (under ISA constraints).
+			# -march=native -> Enable all instruction subsets supported by the local machine.
+			# -fomit-frame-pointer -> I'm not sure what this does yet...
+			#
+			# NOTE(abi): binaries should go to /usr/local/bin by default.
+			$sh_c_local "cd emacs"
+			$sh_c_local "./autogen.sh \
+				&& ./configure --with-native-compilation \
+				--with-json \
+				--with-gnutls \
+				--with-mailutils \
+				--with-cairo
+				CFLAGS=\"-O2 -pipe -mtune=native -march=native -fomit-frame-pointer\""
+				# Other interesting compilation options:
+				#
+				#--with-pgtk (Emacs 29)
+				#--with-x-toolkit=gtk3
+				#--with-xwidgets
+				#--with-imagemagick
+
+			# Build.
+			#
+			# NOTE(abi): NATIVE_FULL_AOT=1 ensures native compilation ahead-of-time for all
+			#            elisp files included in the distribution.
+			$sh_c_local "make -j${JOBS} NATIVE_FULL_AOT=1"
+			$sh_c "make install"
+			$sh_c_local "cd ../"
+			$sh_c_local "unset CC CXX"
+
+			;;
+		fedora)
+			pkg_manager="dnf"
+			emacs_reqs=(
+				emacs
+			)
+			(
+				if ! is_dry_run; then
+					set -x
+				fi
+				$sh_c "$pkg_manager copr enable deathwish/emacs-pgtk-nativecomp"
+				$sh_c "$pkg_manager install -y -q" "${emacs_reqs[@]}"
+			)
+			ZSHENV="/etc/zshenv"
+			;;
+		*)
+			echo
+			echo "ERROR: Unsupported distribution '$lsb_dist'"
+			echo
+			exit 1
+			;;
+		esac
 	fi
 
 	exit 0
