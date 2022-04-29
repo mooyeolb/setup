@@ -137,9 +137,7 @@ do_install() {
 			pre_reqs+=(
 				ripgrep
 				glslang-tools
-				fzf
 				bat
-				exa
 				fd-find
 			)
 			;;
