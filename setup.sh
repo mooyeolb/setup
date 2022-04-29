@@ -469,17 +469,13 @@ do_install() {
 			;;
 		fedora)
 			pkg_manager="dnf"
-			emacs_reqs=(
-				emacs
-			)
 			(
 				if ! is_dry_run; then
 					set -x
 				fi
 				$sh_c "$pkg_manager copr enable deathwish/emacs-pgtk-nativecomp"
-				$sh_c "$pkg_manager install -y -q" "${emacs_reqs[@]}"
+				$sh_c "$pkg_manager install -y -q emacs"
 			)
-			ZSHENV="/etc/zshenv"
 			;;
 		*)
 			echo
