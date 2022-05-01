@@ -152,8 +152,7 @@ do_install() {
 			if ! is_dry_run; then
 				set -x
 			fi
-			$sh_c "apt-get update -qq >/dev/null"
-			$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${pre_reqs[@]}" ">/dev/null"
+			$sh_c "apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${pre_reqs[@]}" ">/dev/null"
 		)
 		ZSHENV="/etc/zsh/zshenv"
 		;;
@@ -422,8 +421,7 @@ do_install() {
 			# # Stop debconf from complaining about postfix nonsense.
 			# DEBIAN_FRONTEND=noninteractive
 			(
-				$sh_c "apt-get update -qq >/dev/null"
-				$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${emacs_pre_reqs[@]}" ">/dev/null"
+				$sh_c "apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${emacs_pre_reqs[@]}" ">/dev/null"
 			)
 
 			# Needed for compiling libgccjit or we'll get cryptic error messages.
@@ -440,30 +438,21 @@ do_install() {
 			# -fomit-frame-pointer -> I'm not sure what this does yet...
 			#
 			# NOTE(abi): binaries should go to /usr/local/bin by default.
-			$sh_c_local "cd emacs"
-			$sh_c_local "./autogen.sh \
+			$sh_c_local "cd emacs \
+				&& ./autogen.sh \
 				&& ./configure --with-native-compilation \
 				--with-json \
 				--with-gnutls \
 				--with-mailutils \
 				--with-cairo
 				CFLAGS=\"-O2 -pipe -mtune=native -march=native -fomit-frame-pointer\""
-				# Other interesting compilation options:
-				#
-				#--with-pgtk (Emacs 29)
-				#--with-x-toolkit=gtk3
-				#--with-xwidgets
-				#--with-imagemagick
-
 			# Build.
 			#
 			# NOTE(abi): NATIVE_FULL_AOT=1 ensures native compilation ahead-of-time for all
 			#            elisp files included in the distribution.
-			$sh_c_local "make -j${JOBS} NATIVE_FULL_AOT=1"
-			$sh_c "make install"
-			$sh_c_local "cd ../"
+			$sh_c_local "cd emacs && make -j${JOBS} NATIVE_FULL_AOT=1"
+			$sh_c "cd emacs && make install"
 			$sh_c_local "unset CC CXX"
-
 			;;
 		fedora)
 			pkg_manager="dnf"
