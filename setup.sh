@@ -217,21 +217,6 @@ do_install() {
 		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
 	fi
 
-	# gnupg
-	if ! grep -qxF "# gnupg" "${ZSHENV}" >/dev/null; then
-		$sh_c_local "{
-			echo \"\"
-			echo \"# gnupg\"
-			echo \"export GNUPGHOME=\\\"\${HOME}/.local/share/gnupg\\\"\"
-		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
-	fi
-
-	# sheldon
-	if ! command_exists sheldon; then
-		$sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
-			| bash -s -- --repo rossmacarthur/sheldon --to ${HOME}/.local/bin"
-	fi
-
 	# dotfiles
 	DOTFILES_PATH="${HOME}/.local/share/git-dotfiles"
 	config="/usr/bin/git --git-dir=${DOTFILES_PATH} --work-tree=${HOME}"
@@ -252,6 +237,21 @@ do_install() {
 	fi
 	if [ -f "${HOME}/.ssh/config" ]; then
 		$sh_c_local "chmod 600 ${HOME}/.ssh/config"
+	fi
+
+	# gnupg
+	if ! grep -qxF "# gnupg" "${ZSHENV}" >/dev/null; then
+		$sh_c_local "{
+			echo \"\"
+			echo \"# gnupg\"
+			echo \"export GNUPGHOME=\\\"\${HOME}/.local/share/gnupg\\\"\"
+		} | sudo tee -a \"${ZSHENV}\" > /dev/null"
+	fi
+
+	# sheldon
+	if ! command_exists sheldon; then
+		$sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
+			| bash -s -- --repo rossmacarthur/sheldon --to ${HOME}/.local/bin"
 	fi
 
 	# ripgrep
