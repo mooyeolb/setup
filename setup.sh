@@ -203,6 +203,13 @@ do_install() {
 	esac
 
 	# zsh
+	if ! command_exists zsh; then
+		echo
+		echo "ERROR: zsh does not exist"
+		echo
+		exit 1
+    fi
+
 	if ! echo "${SHELL}" | grep -Eq ".*/zsh"; then
 		if [ "${lsb_dist}" == "ubuntu" ] && [ "${dist_version}" == "bionic" ]; then
 			$sh_c_local "chsh -s $(which zsh) ${user}"
