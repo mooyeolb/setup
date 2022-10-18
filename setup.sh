@@ -271,7 +271,9 @@ do_install() {
 
 	# fzf
 	if ! command_exists fzf; then
-		$sh_c_local "git clone --depth 1 https://github.com/junegunn/fzf.git ${HOME}/.config/fzf"
+		if [ ! -d "${HOME}/.config/fzf" ]; then
+			$sh_c_local "git clone --depth 1 https://github.com/junegunn/fzf.git ${HOME}/.config/fzf"
+		fi
 		$sh_c_local "${HOME}/.config/fzf/install --xdg --key-bindings --completion --update-rc --no-bash --no-fish"
 	fi
 
@@ -387,7 +389,9 @@ do_install() {
 			$sh_c_local "JOBS=$(nproc --ignore=2)"
 
 			# Clone repo locally and get into it.
-			$sh_c_local "git clone --branch emacs-28 git://git.savannah.gnu.org/emacs.git"
+			if [ ! -d emacs ]; then
+				$sh_c_local "git clone --branch emacs-28 git://git.savannah.gnu.org/emacs.git"
+			fi
 
 			# Get essential dependencies.
 			emacs_pre_reqs=(
@@ -401,8 +405,6 @@ do_install() {
 				libxpm-dev
 				libncurses-dev
 				libgtk-3-dev
-				# libwebkit2gtk-4.0-dev
-				# libmagick++-dev
 			)
 
 			# Get dependencies for gcc-10 and the build process.
@@ -427,7 +429,8 @@ do_install() {
 			# # Stop debconf from complaining about postfix nonsense.
 			# DEBIAN_FRONTEND=noninteractive
 			(
-				$sh_c "apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${emacs_pre_reqs[@]}" ">/dev/null"
+				$sh_c "apt-get update -qq >/dev/null"
+				$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${emacs_pre_reqs[@]}" ">/dev/null"
 			)
 
 			# Needed for compiling libgccjit or we'll get cryptic error messages.
