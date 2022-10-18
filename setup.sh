@@ -156,8 +156,8 @@ do_install() {
 			if ! is_dry_run; then
 				set -x
 			fi
-			$sh_c "apt-get update -qq >/dev/null"
-			$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${pre_reqs[@]}" ">/dev/null"
+			$sh_c "apt-get update >/dev/null"
+			$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y " "${pre_reqs[@]}" ">/dev/null"
 		)
 		ZSHENV="/etc/zsh/zshenv"
 		;;
@@ -429,8 +429,8 @@ do_install() {
 			# # Stop debconf from complaining about postfix nonsense.
 			# DEBIAN_FRONTEND=noninteractive
 			(
-				$sh_c "apt-get update -qq >/dev/null"
-				$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${emacs_pre_reqs[@]}" ">/dev/null"
+				$sh_c "apt-get update >/dev/null"
+				$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y " "${emacs_pre_reqs[@]}" ">/dev/null"
 			)
 
 			# Needed for compiling libgccjit or we'll get cryptic error messages.
@@ -491,9 +491,8 @@ do_install() {
 			$sh_c_local "rm -rf ${HOME}/.config/emacs"
 		fi
 		$sh_c_local "git clone https://github.com/hlissner/doom-emacs ${HOME}/.config/emacs"
-		$sh_c_local "${HOME}/.config/emacs/bin/doom -y sync"
+		$sh_c_local "${HOME}/.config/emacs/bin/doom sync"
 		$sh_c_local "${HOME}/.config/emacs/bin/doom env"
-		$sh_c_local "emacs --batch -f all-the-icons-install-fonts"
 	fi
 
 	exit 0
