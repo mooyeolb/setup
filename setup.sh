@@ -86,8 +86,12 @@ do_install() {
 	fi
 
 	if is_dry_run; then
-		sh_c='echo'
 		sh_c_local='echo'
+		if command_exists sudo; then
+			sh_c='echo sudo '
+		elif command_exists su; then
+			sh_c='echo su -c '
+		fi
 	fi
 
 	# perform some very rudimentary platform detection
@@ -152,7 +156,8 @@ do_install() {
 			if ! is_dry_run; then
 				set -x
 			fi
-			$sh_c "apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${pre_reqs[@]}" ">/dev/null"
+			$sh_c "apt-get update -qq >/dev/null"
+			$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq" "${pre_reqs[@]}" ">/dev/null"
 		)
 		ZSHENV="/etc/zsh/zshenv"
 		;;
@@ -208,6 +213,7 @@ do_install() {
 	if [ ! -d "${HOME}/.cache/zsh" ]; then
 		$sh_c_local "mkdir -p ${HOME}/.cache/zsh"
 	fi
+
 	if ! grep -qxF "# zsh data directory" "${ZSHENV}" >/dev/null; then
 		$sh_c_local "{
 			echo \"\"
