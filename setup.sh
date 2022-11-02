@@ -157,7 +157,8 @@ do_install() {
 				set -x
 			fi
 			$sh_c "apt-get update >/dev/null"
-			$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y " "${pre_reqs[@]}" ">/dev/null"
+			install_cmd="DEBIAN_FRONTEND=noninteractive apt-get install -y " "${pre_reqs[@]}" ">/dev/null"
+			$sh_c $install_cmd
 		)
 		ZSHENV="/etc/zsh/zshenv"
 		;;
