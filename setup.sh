@@ -31,6 +31,9 @@ es)
 esac
 
 command_exists() {
+	if [ -f "~/.local/bin/$@" ]; then
+		return 1
+	fi
 	command -v "$@" >/dev/null 2>&1
 }
 
