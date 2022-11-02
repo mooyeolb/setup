@@ -440,7 +440,10 @@ do_install() {
 			# DEBIAN_FRONTEND=noninteractive
 			(
 				$sh_c "apt-get update >/dev/null"
-				$sh_c "DEBIAN_FRONTEND=noninteractive apt-get install -y " "${emacs_pre_reqs[@]}" ">/dev/null"
+				install_cmd="DEBIAN_FRONTEND=noninteractive apt-get install -y "
+				install_cmd+="${emacs_pre_reqs[@]}"
+				install_cmd+=" >/dev/null"
+				$sh_c "$install_cmd"
 			)
 
 			# Needed for compiling libgccjit or we'll get cryptic error messages.
