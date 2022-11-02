@@ -157,8 +157,10 @@ do_install() {
 				set -x
 			fi
 			$sh_c "apt-get update >/dev/null"
-			install_cmd="DEBIAN_FRONTEND=noninteractive apt-get install -y " "${pre_reqs[@]}" ">/dev/null"
-			$sh_c $install_cmd
+			install_cmd="DEBIAN_FRONTEND=noninteractive apt-get install -y "
+                        install_cmd+="${pre_reqs[@]}"
+                        install_cmd+=" >/dev/null"
+			$sh_c "$install_cmd"
 		)
 		ZSHENV="/etc/zsh/zshenv"
 		;;
@@ -262,7 +264,7 @@ do_install() {
 	fi
 
 	# sheldon
-	if ! command_exists sheldon; then
+	if [ ! -f "${HOME}/.local/bin/sheldon" ]; then
 		$sh_c_local "curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
 			| bash -s -- --repo rossmacarthur/sheldon --to ${HOME}/.local/bin"
 	fi
@@ -398,7 +400,7 @@ do_install() {
 
 			# Clone repo locally and get into it.
 			if [ ! -d emacs ]; then
-				$sh_c_local "git clone --branch emacs-28 git://git.savannah.gnu.org/emacs.git"
+				$sh_c_local "git clone --branch emacs-28 https://github.com/emacs-mirror/emacs.git"
 			fi
 
 			# Get essential dependencies.
