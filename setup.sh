@@ -508,10 +508,6 @@ do_install() {
 		$sh_c_local "${HOME}/.config/emacs/bin/doom env"
 	fi
 
-	# git settings
-	$sh_c_local "git config --global user.email \"mooyeol.b@naverlabs.com\""
-	$sh_c_local "git config --global user.name \"Mooyeol Baek\""
-
 	exit 0
 }
 
